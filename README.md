@@ -1,3 +1,1 @@
-
-# zimbra-fail2ban-iptables-antispam
-# zimbra-fail2ban-iptables-antispam
+copy jail.conf and filter.d folder
