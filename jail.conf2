@@ -1,0 +1,118 @@
+# Fail2Ban configuration file
+#
+# Author: Cyril Jaquier
+#
+# $Revision: 747 $
+## The DEFAULT allows a global definition of the options. They can be overridden
+# in each jail afterwards.
+[DEFAULT]
+# "ignoreip" can be an IP address, a CIDR mask or a DNS host. Fail2ban will not
+# ban a host which matches an address in this list. Several addresses can be
+# defined using space separator.
+ignoreip = 127.0.0.1/8 202.43.115.188/32
+# "bantime" is the number of seconds that a host is banned.
+bantime = 600
+# A host is banned if it has generated "maxretry" during the last "findtime"
+# seconds.
+findtime = 600
+
+# "maxretry" is the number of failures before a host get banned.
+maxretry = 3
+
+# "backend" specifies the backend used to get files modification. Available
+# options are "gamin", "polling" and "auto". This option can be overridden in
+# each jail too (use "gamin" for a jail and "polling" for another).
+#
+# gamin: requires Gamin (a file alteration monitor) to be installed. If Gamin
+# is not installed, Fail2ban will use polling.
+# polling: uses a polling algorithm which does not require external libraries.
+# auto: will choose Gamin if available and polling otherwise.
+backend = auto
+
+# This jail corresponds to the standard configuration in Fail2ban 0.6.
+# The mail-whois action send a notification e-mail with a whois request
+# in the body.
+
+[ssh-iptables]
+
+enabled = true
+filter = sshd
+action = iptables[name=SSH, port=ssh, protocol=tcp]
+sendmail-whois[name=SSH, dest=zeze@vavai.com, sender=fail2ban@excellent.co.id]
+logpath = /var/log/messages
+maxretry = 5
+
+# This jail forces the backend to "polling".
+
+[sasl-iptables]
+
+enabled = true
+filter = sasl
+backend = polling
+action = iptables[name=sasl, port=smtp, protocol=tcp]
+sendmail-whois[name=sasl, dest=support@excellent.co.id]
+logpath = /var/log/zimbra.log
+
+# Here we use TCP-Wrappers instead of Netfilter/Iptables. "ignoreregex" is
+# used to avoid banning the user "myuser".
+
+[ssh-tcpwrapper]
+
+enabled = trye
+filter = sshd
+action = hostsdeny
+sendmail-whois[name=SSH, dest=support@excellent.co.id]
+ignoreregex = for myuser from
+logpath = /var/log/messages
+
+# This jail uses ipfw, the standard firewall on FreeBSD. The "ignoreip"
+# option is overridden in this jail. Moreover, the action "mail-whois" defines
+# the variable "name" which contains a comma using "". The characters '' are
+# valid too.
+
+[zimbra-account]
+enabled = true
+filter = zimbra
+action = iptables-allports[name=zimbra-account]
+sendmail[name=zimbra-account, dest=contoh@contoh.co.id]
+logpath = /opt/zimbra/log/mailbox.log
+bantime = 600
+maxretry = 5
+
+[zimbra-audit]
+enabled = true
+filter = zimbra
+action = iptables-allports[name=zimbra-audit]
+sendmail[name=Zimbra-audit, dest=contoh@contoh.co.id]
+logpath = /opt/zimbra/log/audit.log
+bantime = 600
+maxretry = 5
+
+[zimbra-recipient]
+enabled = true
+filter = zimbra
+action = iptables-allports[name=zimbra-recipient]
+sendmail[name=Zimbra-recipient, dest=contoh@contoh.co.id]
+logpath = /var/log/zimbra.log
+#findtime = 604800
+bantime = 172800
+maxretry = 5
+
+[postfix]
+enabled = true
+filter = postfix
+action = iptables-multiport[name=postfix, port=smtp, protocol=tcp]
+sendmail-buffered[name=Postfix, dest=contoh@contoh.co.id]
+logpath = /var/log/zimbra.log
+bantime = -1
+maxretry = 1
+
+#[sasl]
+#enabled = true
+#port = smtp,ssmtp,imap2,imap3,imaps,pop3,pop3s
+#filter = sasl
+# You might consider monitoring /var/log/warn.log instead
+# if you are running postfix. See http://bugs.debian.org/507990
+#logpath = /var/log/zimbra.log
+
+
